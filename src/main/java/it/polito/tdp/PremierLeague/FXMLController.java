@@ -6,10 +6,16 @@
 package it.polito.tdp.PremierLeague;
 
 import java.net.URL;
+import java.util.Collections;
+import java.util.List;
 import java.util.ResourceBundle;
+
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultWeightedEdge;
 
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Model;
+import it.polito.tdp.PremierLeague.model.Player;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -20,6 +26,8 @@ import javafx.scene.control.TextField;
 public class FXMLController {
 
 	private Model model;
+	Graph<Player, DefaultWeightedEdge> grafo;
+	private boolean grafoCreato = false;
 
     @FXML // ResourceBundle that was given to the FXMLLoader
     private ResourceBundle resources;
@@ -47,17 +55,51 @@ public class FXMLController {
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
-    	
+    	Match match = this.cmbMatch.getValue();
+    	if(match.equals(null)) {
+    		txtResult.setText("per favore scegli una partita");
+    	}else {
+    		this.model.creaGrafo(match);
+    		
+    		this.grafoCreato = true;
+    		this.grafo = this.model.getGrafo();
+    		
+    		txtResult.appendText("GRAFO CREATO\n");
+    		txtResult.appendText("\nVERTICI: "+this.grafo.vertexSet().size());
+    		txtResult.appendText("\nARCHI: "+this.grafo.edgeSet().size());
+    	}
     }
 
     @FXML
     void doGiocatoreMigliore(ActionEvent event) {    	
-    	
+    	if(this.grafoCreato == false) {
+    		txtResult.setText("DEVI PRIMA CREARE IL GRAFO\n");
+    	}else {
+    		Player migliore = this.model.calcolaGiocatoreMigliore();
+    		double grado = this.model.calcolaGrado(migliore);
+    		
+    		txtResult.setText("GIOCATORE MIGLIORE : "+migliore.getName()+" | ∆ : "+grado);
+    	}
     }
     
     @FXML
     void doSimula(ActionEvent event) {
-
+    	if(this.grafoCreato == false) {
+    		txtResult.setText("DEVI PRIMA CREARE IL GRAFO\n");
+    	}else {
+    		String n = txtN.getText();
+    		if(n.equals("")) {
+    			txtResult.appendText("\nRIEMPI IL CAMPO\n");;
+    		}else {
+    			try {
+    				int N = Integer.parseInt(n);
+    				this.model.Simula(N);
+    			}catch(NumberFormatException e ) {
+    				e.printStackTrace();
+    				txtResult.appendText("\nPER FAVORE INSERISCI SOLO NUMERI\n");
+    			}
+    		}
+    	}
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -73,5 +115,10 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	
+    	this.cmbMatch.getItems().clear();
+    	List<Match> match = this.model.getAllMatches();
+    	Collections.sort(match);
+    	this.cmbMatch.getItems().addAll(match);
     }
 }
